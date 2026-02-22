@@ -1,0 +1,26 @@
+html, body {
+    margin:0; padding:0;
+    height:100vh; width:100vh;
+}
+
+body {
+    background:rgba(255,0,0,0.05);
+}
+
+canvas {
+    outline:1px solid rgba(255,0,0,0.15);
+    margin-left:10vw; 
+    margin-top:10vh; 
+    width:80vw; 
+    height:80vh
+}
+
+.texture-image-example {
+    position:absolute;
+    bottom:1em;
+    right:1em;
+    width:4em;
+    border-radius:5px;
+    border:1px solid white;
+    box-shadow: 0px 3px 13px 0px rgb(0 0 0 / 7%);
+}

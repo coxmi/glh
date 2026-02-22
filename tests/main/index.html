@@ -1,30 +1,16 @@
 <!doctype html>
 <html>
 	<head>
-		<style>
-			html, body {
-				margin:0; padding:0;
-				height:100vh; width:100vh;
-				background:rgba(255,0,0,0.05);
-			}
-			canvas {
-				outline:1px solid gold;
-			}
-
-			#image {
-				position:absolute;
-				bottom:1em;
-				right:1em;
-				width:4em;
-				border-radius:5px;
-				border:1px solid white;
-				box-shadow: 0px 3px 13px 0px rgb(0 0 0 / 7%);
-			}
-		</style>
+		<link rel="stylesheet" href="./style.css">
 	</head>
 	<body>
-		<canvas id="canvas" style="margin-left:10vw; margin-top:10vh; width:80vw; height:80vh"></canvas>
-		<img id="image" src="https://picsum.photos/seed/test/1000/1000" crossorigin="anonymous"></body>
+		<canvas id="canvas"></canvas>
+		<img 
+			id="texture" 
+			class="texture-image-example" 
+			src="https://picsum.photos/seed/test/1000/1000" 
+			crossorigin="anonymous"
+		></body>
 		<script src="./dist/main.js"></script>
 	</body>
 </html>

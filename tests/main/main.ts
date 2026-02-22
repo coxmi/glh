@@ -1,8 +1,8 @@
-import { setGLViewport } from "./../../src/html/index.ts"
-import { Shader, Texture, FrameBuffer } from "./../../src/index.ts"
-import { VertexBuffer, VertexIndex, VAO } from "./../../src/vertex.ts"
-import { frameLoop } from "./../../src/dev/index.ts"
-import { createUniforms } from "./../../src/uniforms.ts"
+import { setGLViewport } from '../../src/html/index.ts'
+import { Shader, Texture, FrameBuffer } from '../../src/index.ts'
+import { VertexBuffer, VertexIndex, VAO } from '../../src/vertex.ts'
+import { frameLoop } from '../../src/dev/index.ts'
+import { createUniforms } from '../../src/uniforms.ts'
 
 
 const matrix = {
@@ -32,8 +32,8 @@ const matrix = {
 }
 
 // init
-const image = document.getElementById('image') as HTMLImageElement
-loadImage(image, (x: HTMLImageElement) => init(x))
+const texture = document.getElementById('texture') as HTMLImageElement
+loadImage(texture, (x: HTMLImageElement) => init(x))
 
 
 function distort(gl: WebGL2RenderingContext) {

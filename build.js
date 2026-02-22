@@ -26,12 +26,12 @@ const testConfig = {
 }
 
 if (isDev) {
-	await Promise.all([
+	await Promise.race([
 		(await context(libConfig)).watch(),
 		(await context(testConfig)).watch()
 	])
 } else {
-	await Promise.all([
+	await Promise.race([
 		build(libConfig),
 		build(testConfig)
 	])
