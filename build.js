@@ -16,23 +16,25 @@ const libConfig = {
    }
 }
 
-const testConfig = {
-    entryPoints: glob.sync('tests/**/main.ts'),
+const exampleConfig = {
+    entryPoints: glob.sync('examples/**/main.ts'),
     entryNames: '[dir]/dist/[name]',
-    outdir: 'tests',
-    outbase: 'tests',
+    outdir: 'examples',
+    outbase: 'examples',
     bundle: true,
     platform: 'browser',
 }
 
 if (isDev) {
-	await Promise.race([
-		(await context(libConfig)).watch(),
-		(await context(testConfig)).watch()
+	const lib = await context(libConfig)
+	const examples = await context(exampleConfig)
+	await Promise.all([
+		lib.watch(),
+		examples.watch()
 	])
 } else {
-	await Promise.race([
+	await Promise.all([
 		build(libConfig),
-		build(testConfig)
+		build(exampleConfig)
 	])
 }

@@ -1,8 +1,7 @@
 import { setGLViewport } from '../../src/html/index.ts'
 import { Shader, Texture, FrameBuffer } from '../../src/index.ts'
 import { VertexBuffer, VertexIndex, VAO } from '../../src/vertex.ts'
-import { frameLoop } from '../../src/dev/index.ts'
-import { createUniforms } from '../../src/uniforms.ts'
+import { saveRenderResult } from '../../test/common/render.ts'
 
 
 const matrix = {
@@ -236,11 +235,10 @@ function init(image: HTMLImageElement) {
             firstPassTexture.bind(0)
             distortProgram.draw()
     }
-
-    const loop = frameLoop(render)
-    loop.start()
-
-    // setTimeout(loop.stop, 2000)
+    render(0)
+    saveRenderResult(gl)
+    // const loop = frameLoop(render)
+    // loop.start()
 }
 
 
