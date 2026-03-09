@@ -1,7 +1,13 @@
 import { TYPE_LENGTH, TYPE_COLUMNS, type AttributeType } from './attributes.ts'
 import { glTypeFromTypedArray } from './util.ts'
-import type { TypedArray, DrawMode } from './types.ts'
+import type { TypedArray, UintTypedArray, DrawMode } from './types.ts'
 import type { Shader } from './shader.ts'
+
+
+type VertexBufferLayout = Array<{
+    type: AttributeType
+    location: number
+}>
 
 /**
  * ```ts
@@ -12,18 +18,20 @@ import type { Shader } from './shader.ts'
  * vertexBuffer.bind/unbind/delete()
  * ```
  */
+
 export class VertexBuffer {
     buffer: WebGLBuffer
     vertices: TypedArray
+    layouts?: ParsedLayout[]
     gl: WebGL2RenderingContext
 
-    constructor(gl: WebGL2RenderingContext, vertices: TypedArray) {
+    constructor(gl: WebGL2RenderingContext, vertices: TypedArray | Array<number>) {
         const buffer = gl.createBuffer()
+        this.buffer = buffer 
+        this.vertices = Array.isArray(vertices) ? new Float32Array(vertices) : vertices
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
-        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW)
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW)
         gl.bindBuffer(gl.ARRAY_BUFFER, null)
-        this.buffer = buffer
-        this.vertices = vertices
         this.gl = gl
     }
 
@@ -39,23 +47,38 @@ export class VertexBuffer {
         return glTypeFromTypedArray(this.gl, this.vertices)
     }
 
+    set layout(layout: VertexBufferLayout) {
+        this.layouts = parseLayouts({ buffer: this, layout })
+    }
+
     bind() {
         const gl = this.gl
         gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
+        if (this.layouts) bindAttributes(this.gl, this.layouts, /* no shader specified */ undefined)
     }
 
     unbind() {
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null)
     }
 
+    draw(mode: DrawMode = this.gl.TRIANGLES) {
+        if (!this.layouts) throw new Error(
+            'Cannot draw vertex buffer directly without a layout description: ' +
+            `use a VAO or set a layout with "buffer.layout = [{ location: 0, type: 'vec3' }]"`
+        );
+        const { stride } = this.layouts[0]
+        const vertexCount = this.count / stride
+        this.gl.drawArrays(mode, 0, vertexCount)
+    }
+
     delete() {
         this.gl.deleteBuffer(this.buffer)
         // @ts-expect-error
-        this.buffer = undefined
+        delete this.buffer
         // @ts-expect-error
-        this.vertices = undefined
+        delete this.vertices
         // @ts-expect-error
-        this.gl = undefined
+        delete this.gl
     }
 }
 
@@ -71,15 +94,15 @@ export class VertexBuffer {
  */
 export class VertexIndex {
     buffer: WebGLBuffer
-    indices: TypedArray
+    indices: UintTypedArray
     gl: WebGL2RenderingContext
 
-    constructor(gl: WebGL2RenderingContext, indices: TypedArray) {
+    constructor(gl: WebGL2RenderingContext, indices: UintTypedArray | Array<number>) {
         this.buffer = gl.createBuffer()
+        this.indices = Array.isArray(indices) ? new Uint16Array(indices) : indices
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffer)
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW)
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW)
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null)
-        this.indices = indices
         this.gl = gl
     }
 
@@ -110,23 +133,28 @@ export class VertexIndex {
     delete() {
         this.gl.deleteBuffer(this.buffer)
         // @ts-expect-error
-        this.buffer = undefined
+        delete this.buffer
         // @ts-expect-error
-        this.indices = undefined
+        delete this.indices
         // @ts-expect-error
-        this.gl = undefined
+        delete this.gl
     }
 }
 
-
 type LayoutArgs = {
     buffer?: VertexBuffer
-    // indices: Record<string, VertexIndex>
-    layout: Record<string, {
-        type: AttributeType
-        buffer?: VertexBuffer
-        location?: number
-    }>
+    index?: VertexIndex
+    layout: 
+        | Array<{
+            type: AttributeType
+            buffer?: VertexBuffer
+            location: number
+        }>
+        | Record<string, {
+            type: AttributeType
+            buffer?: VertexBuffer
+            location?: number
+        }>
 }
 
 type ParsedLayout = { 
@@ -142,12 +170,21 @@ type ParsedAttributeInfo = {
     location?: number
 }
 
+function arrayToObject<T = any>(arr: T[]): Record<string,T> {
+    const obj: Record<string, T> = {}
+    for (let i = 0, l = arr.length; i < l; i++) {
+        obj[i.toString()] = arr[i]
+    }
+    return obj
+}
+
 function parseLayouts(input: LayoutArgs) {
     const layouts: ParsedLayout[] = []
     const buffers = new Map<VertexBuffer, number>()
+    const userLayout = Array.isArray(input.layout) ? arrayToObject(input.layout) : input.layout
 
-    for (const name in input.layout) {
-        const schema = input.layout[name]
+    for (const name in userLayout) {
+        const schema = userLayout[name]
         const buffer = schema.buffer || input.buffer
         if (!buffer) throw new Error('No buffer set for ' + name)
         let index = buffers.get(buffer)
@@ -182,7 +219,7 @@ function parseLayouts(input: LayoutArgs) {
     return layouts
 }
 
-function pointAttributes(gl: WebGL2RenderingContext, parsedLayouts: ParsedLayout[], program?: WebGLProgram): void {
+function bindAttributes(gl: WebGL2RenderingContext, parsedLayouts: ParsedLayout[], program?: WebGLProgram): void {
     for (const item of parsedLayouts) {
         const { stride, buffer, layout } = item
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer.buffer)
@@ -190,7 +227,10 @@ function pointAttributes(gl: WebGL2RenderingContext, parsedLayouts: ParsedLayout
             const { length, columns, offset, location } = layout[name]
             const attribLocation = location ?? (program ? gl.getAttribLocation(program, name) : -1)
             if (attribLocation < 0) 
-                throw new Error(`No location found for ${name}, set the location or pass in a shader`)
+                throw new Error(
+                    `No location found for ${name}, set the location explicitly` 
+                    + (program ? 'or pass in a shader' : '')
+                )
             const rows = length / columns
             const bytesPerCol = rows * buffer.bytes
             for (let i = 0; i < columns; i++) {
@@ -243,7 +283,8 @@ export class VAO {
         this.layouts = parseLayouts(config)
         this.vao = gl.createVertexArray()
         gl.bindVertexArray(this.vao)
-        pointAttributes(gl, this.layouts, shader?.program)
+        bindAttributes(gl, this.layouts, shader?.program)
+        if (config.index) config.index.bind()
         gl.bindVertexArray(null)
         this.gl = gl
     }
@@ -268,10 +309,10 @@ export class VAO {
     delete() {
         this.gl.deleteVertexArray(this.vao)
         // @ts-expect-error
-        this.layouts = undefined
+        delete this.layouts
         // @ts-expect-error
-        this.vao = undefined
+        delete this.vao
         // @ts-expect-error
-        this.gl = undefined
+        delete this.gl
     }
 }

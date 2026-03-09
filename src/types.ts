@@ -1,12 +1,24 @@
 
 export type TypedArray =
     | Float32Array
-    | Int32Array
-    | Uint32Array
-    | Int16Array
-    | Uint16Array
     | Int8Array
+    | Int16Array
+    | Int32Array
     | Uint8Array
+    | Uint16Array
+    | Uint32Array
+    | Uint8ClampedArray
+    // unsupported due to no equivalent gl enum types
+    // Float16Array
+    // Float64Array
+    // BigInt64Array
+    // BigUint64Array
+
+export type UintTypedArray =
+    | Uint8Array
+    | Uint16Array
+    | Uint32Array
+    | Uint8ClampedArray
 
 export type GLType = 
     | WebGLRenderingContextBase['BYTE'] 

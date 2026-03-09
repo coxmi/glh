@@ -36,10 +36,10 @@ export class FrameBuffer {
     delete() {
         this.gl.deleteBuffer(this.buffer)
         // @ts-expect-error
-        this.buffer = undefined
+        delete this.buffer
         // @ts-expect-error
-        this.texture = undefined
+        delete this.texture
         // @ts-expect-error
-        this.gl = undefined
+        delete this.gl
     }
 }

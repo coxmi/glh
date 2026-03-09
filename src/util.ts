@@ -8,7 +8,13 @@ export function glTypeFromTypedArray(gl: WebGL2RenderingContext, arr: TypedArray
     if (arr instanceof Uint32Array) return gl.UNSIGNED_INT
     if (arr instanceof Int8Array) return gl.BYTE
     if (arr instanceof Uint8Array) return gl.UNSIGNED_BYTE
+    if (arr instanceof Uint8ClampedArray) return gl.UNSIGNED_BYTE
     if (arr instanceof Int16Array) return gl.SHORT
     if (arr instanceof Uint16Array) return gl.UNSIGNED_SHORT
-    throw new Error(`Unsupported typed array: ${typeof arr}`)
+    // Unsupported TypedArray types: 
+    // Float16Array, Float64Array, BigInt64Array, BigUint64Array
+
+    // @ts-ignore: arr is type never, but we still need to handle 
+    // this at runtime if an unsupported type is used
+    throw new Error(`Unsupported TypedArray: ${arr?.constructor?.name}. GL does how have an equivalent enum type.`)
 }

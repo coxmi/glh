@@ -35,11 +35,11 @@ export class Shader<U extends UniformArgs = {}> {
     delete() {
         this.gl.deleteProgram(this.program)
         // @ts-expect-error
-        this.program = undefined
+        delete this.program
         // @ts-expect-error
-        this.uniforms = undefined
+        delete this.uniforms
         // @ts-expect-error
-        this.gl = undefined
+        delete this.gl
     }
 }
 
