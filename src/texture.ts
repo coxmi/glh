@@ -87,8 +87,8 @@ export class Texture {
         this.gl = gl
     }
 
-    bind(activeTexLoc?: number) {
-        if (activeTexLoc !== undefined) this.gl.activeTexture(this.gl.TEXTURE0 + activeTexLoc)
+    bind(activeTextureLocation?: number) {
+        if (activeTextureLocation !== undefined) this.gl.activeTexture(this.gl.TEXTURE0 + activeTextureLocation)
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture)
     }
 
