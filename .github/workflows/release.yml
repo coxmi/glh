@@ -8,25 +8,38 @@ on:
 jobs:
     publish:
         runs-on: ubuntu-latest
+        environment: npm
+        container:
+            image: mcr.microsoft.com/playwright:v1.58.2-noble
         permissions:
-            contents: write
-            id-token: write
+            id-token: write # Required for OIDC
+            contents: write # required for zip release
         steps:
-        	# check out and build
+            # check out and build
             - uses: actions/checkout@v4
-            - uses: actions/setup-node@v4
+            - name: build and run tests
+              run: |
+                npm ci
+                npm run ci
+
+            # upload diffs if the CI fails
+            - name: upload diffs
+              if: always()
+              uses: actions/upload-artifact@v4
               with:
-                  node-version: 24
-                  registry-url: https://registry.npmjs.org
-            - run: npm ci
-            - run: npm run build
-            - run: npm run test
+                name: screenshot-diffs
+                path: test/diffs/**/*.png
+                if-no-files-found: ignore
 
             # publish to npm
             - name: publish to npm
-              run: npm publish
+              run: |
+                npm -v
+                npm publish
 
             # create and publish github release
+            - name: install zip
+              run: apt-get install -y zip
             - name: create archive
               run: |
                   zip -r release.zip \
@@ -39,3 +52,4 @@ jobs:
               with:
                   files: release.zip
                   allowUpdates: true
+                  tag_name: ${{ github.ref_name }}

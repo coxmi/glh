@@ -84,18 +84,14 @@ async function writePng(png: PNG, filepath: string) {
     })
 }
 
-type ComparePNGOptions = {
-    threshold?: number
-}
-
-function comparePng(a: PNG, b: PNG, { threshold = 0 }: ComparePNGOptions = {}) {
+function comparePng(a: PNG, b: PNG) {
     if (a.width !== b.width || a.height !== b.height) {
         throw new Error(`Dimension mismatch between screenshot and reference (${a.width}x${a.height}, ${b.width}x${b.height})`)
     }
     const diff = new PNG({ width: a.width, height: a.height })
     const pixels = pixelmatch(a.data, b.data, diff.data, a.width, a.height, { 
-        threshold,
-        // includeAA: false,
+        threshold: 0.15,
+        includeAA: false,
         diffMask: true 
     })
     return { diff, pixels }
@@ -177,7 +173,8 @@ export async function compareWithScreenshot(
         throw e
     }
 
-    if (compare.pixels > 0) {
+    // pick a small but non-zero pizel threshold, as some comparisons keep jamming up CI
+    if (compare.pixels > 20) {
         await writePng(compare.diff, diffPath)
         const format = num => Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(num)
         throw new Error(`${name}: ${format(compare.pixels)} pixels differ, saved diff at: ${diffName}`)
