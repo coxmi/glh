@@ -53,5 +53,5 @@ jobs:
               uses: softprops/action-gh-release@v2
               with:
                   files: release.zip
-                  allowUpdates: true
                   tag_name: ${{ github.ref_name }}
+                  name: ${{ github.ref_name }}
