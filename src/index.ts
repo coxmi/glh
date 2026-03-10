@@ -1,3 +1,4 @@
+export { setGLViewport } from './util.ts'
 export { Texture } from './texture.ts'
 export { FrameBuffer } from './framebuffer.ts'
 export { VertexBuffer, VertexIndex, VAO } from './vertex.ts'

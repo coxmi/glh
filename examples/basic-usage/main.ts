@@ -1,5 +1,4 @@
-import { setGLViewport } from '../../src/html/index.ts'
-import { Shader, Texture, FrameBuffer, VertexBuffer, VertexIndex, VAO } from '../../src/index.ts'
+import { Shader, Texture, FrameBuffer, VertexBuffer, VertexIndex, VAO, setGLViewport } from '../../src/index.ts'
 import { saveRenderResult } from '../../test/common/render.ts'
 
 // init canvas and gl
