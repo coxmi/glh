@@ -39,7 +39,9 @@ jobs:
 
             # create and publish github release
             - name: install zip
-              run: apt-get install -y zip
+              run: |
+                apt-get update
+                apt-get install -y zip
             - name: create archive
               run: |
                   zip -r release.zip \
