@@ -1,0 +1,40 @@
+name: release
+
+on:
+    push:
+        tags:
+            - "v*"
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            id-token: write
+        steps:
+        	# check out and build
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  registry-url: https://registry.npmjs.org
+            - run: npm ci
+            - run: npm run build
+            - run: npm run test
+
+            # publish to npm
+            - name: publish to npm
+              run: npm publish
+
+            # create and publish github release
+            - name: create archive
+              run: |
+                  zip -r release.zip \
+                  dist/index.js \
+                  dist/index.d.ts \
+                  README.md \
+                  LICENSE
+            - name: github publish release
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: release.zip

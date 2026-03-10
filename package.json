@@ -3,6 +3,7 @@
   "version": "0.0.2",
   "description": "WebGL2 helper library",
   "author": "Michael Cox",
+  "license": "GPL-3.0-only",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/coxmi/gleasy.git"
@@ -26,7 +27,6 @@
     "test": "tsc --noEmit && node --require ts-node/register --test '**/*.test.ts'",
     "types": "tsc --project tsconfig.json --noEmit false --declaration --emitDeclarationOnly --outDir dist",
     "build": "npm run types && node build.js",
-    "pub": "npm run build && npm run test && npm version patch && npm publish",
     "screenshots": "node --require ts-node/register test/common/playwright.ts --update-screenshots",
     "size": "node --require ts-node/register tools/readme-size.ts"
   },
