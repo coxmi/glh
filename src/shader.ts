@@ -6,8 +6,14 @@ import type { Expand } from './util.ts'
 /**
  * ```ts
  * // create a shader with automatic uniforms:
- * const shader = new Shader<{ uTex: 'sampler2D' }>(gl, vertex, fragment, {
- *   uTex: 0
+ * type Uniforms = { 
+ *   uTex: 'sampler2D'
+ *   uLightColor: 'vec3[2]'
+ * }
+ * 
+ * const shader = new Shader<Uniforms>(gl, vertex, fragment, {
+ *   uTex: 0,
+ *   uLightColor: [255,255,255, 100,100,100]
  * })
  * 
  * // update the uniform values during rendering:

@@ -202,14 +202,15 @@ function uniformArrays() {
             vColor = uColors[idx];
         }
     `
-    type Uniforms = { uColors: 'vec3' }
+
+    type Uniforms = { uColors: 'vec3[4]' }
     const shader = new Shader<Uniforms>(gl, vertexSrc, fragmentSrc, {
         uColors: [
             // red, green, blue, yellow
             1.0, 0.0, 0.0,
             0.0, 1.0, 0.0,
             0.0, 0.0, 1.0,
-            1.0, 1.0, 0.0 
+            1.0, 1.0, 0.0,
         ]
     })
     // 4 vertices for a quad, using gl.TRIANGLE_STRIP
@@ -252,13 +253,16 @@ function uniformMatrices() {
         in vec3 aColor;
         out vec3 vColor;
         void main() {
-            gl_Position = vec4(aPosition * uTransform, 1.0);
+            vec3 pos = uTransform * aPosition;
+            // correct for canvas aspect ratio (800px x 600px)
+            pos.x = pos.x * 6./8.; 
+            gl_Position = vec4(pos, 1.0);
             vColor = aColor;
         }
     `
     type Uniforms = { uTransform: 'mat3' }
     const shader = new Shader<Uniforms>(gl, vertexSrc, fragmentSrc, {
-        uTransform: rotate(10)
+        uTransform: rotate(Math.PI/4)
     })
 
     // 4 vertices for a quad using gl.TRIANGLE_STRIP, with colors
@@ -398,6 +402,7 @@ function framebuffer() {
             fragColor = texture(uFrame, uv);
         }
     `
+
     const distortShader = new Shader<{ uFrame: 'sampler2D' }>(gl, vertex, fragment, { uFrame: 0 })
     const distortVAO = new VAO(gl, distortShader, {
         buffer: quad,

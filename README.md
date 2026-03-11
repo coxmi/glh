@@ -17,7 +17,7 @@ In your vertex shader:
 uniform mat3 uTransformMatrix;
 uniform vec3 uPos;
 void main() { 
-	gl_Position = vec4(uPos * uTransformMatrix, 1.)
+   gl_Position = vec4(uTransformMatrix * uPos, 1.)
 }
 ```
 
@@ -28,7 +28,7 @@ import { Shader } from 'gleasy'
 
 // describe uniforms to get type hints
 type Uniforms = { 
-   uTransformMatrix: 'mat3',
+   uTransformMatrix: 'mat3'
    uPos: 'vec3'
 }
 
@@ -51,6 +51,10 @@ shader.use()
 All gl2 uniform types are supported: <br>
 `float` `vec2` `vec3` `vec4` `int` `ivec2` `ivec3` `ivec4` `uint` `uvec2` `uvec3` `uvec4` `bool` `bvec2` `bvec3` `bvec4` `mat2` `mat3` `mat4` `mat2x3` `mat2x4` `mat3x2` `mat3x4` `mat4x2` `mat4x3` `sampler2D` `samplerCube` 
 
+And work with specified lengths for arrays: `float[3]`, `vec3[6]`
+
+Or arrays of unspecified length: `float[]`
+
 Example glsl:
 
 ```
@@ -61,26 +65,32 @@ uniform vec3 uColor;
 uniform mat3 uMatrix;
 uniform sampler2D uTex;
 uniform samplerCube uCubeMap;
+uniform vec3 uLightColors[4];
 ...
 ```
 
 Types:
 
 ```ts
-// refer to glsl types by name
 type Uniforms { 
    uTime: 'float'
    uPos: 'vec2'
    uColor: 'vec3' 
    uMatrix: 'mat3'
    uTex: 'sampler2D'
-   uCubeMap: 'samplerCube' 
+   uCubeMap: 'samplerCube'
+   uLightColors: 'vec3[4]' 
+   ...
 }
+
+const shader = new Shader<Uniforms>(gl, vertex, fragment, {
+   uLightColors // array[12]
+})
 ```
 
 ### `VertexBuffer`
 
-Vertex data can be interleaved, or use multiple buffers as long as they have the same number of vertices. You can pass a TypedArray directly, or it will default to a `Float32Array` when called with a standard array type:
+Vertex data can be interleaved, or be spread across multiple buffers. You can pass a TypedArray directly, or it will default to a `Float32Array` when called with a standard array type:
 
 ```ts
 import { VertexBuffer } from 'gleasy'
@@ -112,9 +122,12 @@ Get attribute names/locations from the shader program:
 
 ```ts
 import { Shader, VAO } from 'gleasy'
-const shader = new Shader([...data])
 
-// describe the vertex attribute layout
+const vertices = new VertexBuffer(gl, array)
+const shader = new Shader(gl, vertex, fragment)
+
+// describe the vertex attribute layout on 
+// the VAO for automatic attribute binding
 const vao = new VAO(gl, shader, {
    buffer: vertices,
    layout: { 
@@ -130,7 +143,7 @@ vao.draw()
 
 ```
 
-You can use separate buffers, or manually specify location bindings for flexibility:
+You can use separate buffers or manually specify attribute locations for better flexibility:
 
 ```ts
 // set a separate buffer for each attribute:
@@ -141,7 +154,7 @@ const vao = new VAO(gl, shader, {
    }
 })
 
-// and/or use location indexes:
+// and/or use location indexes (don't pass a shader):
 const vao = new VAO(gl, {
    buffer: position, // default buffer
    layout: [
@@ -159,7 +172,7 @@ vao.draw()
 
 ### Vertex attribute layouts
 
-Attribute layouts can be described directly on the VertexBuffer and used in draw calls.
+Attribute layouts can also be described directly on the VertexBuffer and used in draw calls directly, if you really want.
 
 In your vertex shader:
 
@@ -171,7 +184,7 @@ layout(location=1) in vec3 aColor;
 In your program:
 
 ```ts
-const vertices = new VertexBuffer(gl, [...data])
+const vertices = new VertexBuffer(gl, array)
 
 // describe the vertex attribute layout
 vertices.setLayout([
@@ -184,6 +197,8 @@ shader.use()
 
 // draw directly from attribute locations
 vertices.bind()
+// explicit call to bindLayout() as it involves 
+// some overhead when compared to VAOs
 vertices.bindLayout()
 vertices.draw()
 
@@ -197,21 +212,22 @@ Draw parts of your vertex buffers:
 import { VertexIndex, VertexBuffer } from 'gleasy'
 
 // create a vertex buffer
-const vertices = new VertexBuffer(gl, [...data])
+const vertices = new VertexBuffer(gl, array)
 
 // create your index, only draws the first 3 vertices (0, 1, 2)
 const index = new VertexIndex(gl, new Uint16Array([0, 1, 2]))
 
+shader.use()
 index.bind() 
 index.draw()
 ```
 
 You can also explicitly pass in other typed arrays to the constructor:<br>
 `Uint8Array`, `Uint16Array`, `Uint32Array`, `Uint8ClampedArray`. 
-<br>
-A standard array type will default to a 16-bit unsigned int array (`Uint16Array`).
 
-##### The index can also be saved in a `VAO`:
+A standard array type will default to a 16-bit unsigned int array (`Uint16Array`). 
+
+The index can also be saved in a `VAO`:
 
 ```ts
 const vao = new VAO(gl, {
@@ -235,7 +251,7 @@ Create a texture from an image:
 ```ts
 import { Texture } from 'gleasy'
 // create a texture from an image 
-// (make sure the image has already loaded)
+// (making sure the image has already loaded)
 const texture = new Texture(gl, image, {
    flip:true, // flip vertical        
 })
@@ -244,8 +260,8 @@ const texture = new Texture(gl, image, {
 texture.bind(0)
 
 // set texture location in uniform
-type Uniforms = { tex: 'sampler2d' }
-const shader = new Shader<Uniforms>(gl, vSrc, fSrc, { tex:0 })
+type Uniforms = { tex: 'sampler2D' }
+const shader = new Shader<Uniforms>(gl, vertex, fragment, { tex:0 })
 
 shader.use()
 vao.bind()
