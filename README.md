@@ -104,17 +104,30 @@ const vertices = new VertexBuffer(gl, new Float32Array([
 ]))
 
 // multiple buffers
-const position = new VertexBuffers(gl, [
+const position = new VertexBuffer(gl, [
    0.0,  0.5, 0.0,  
   -0.5, -0.5, 0.0,  
    0.5, -0.5, 0.0,  
 ])
-const color = new VertexBuffers(gl, [
+const color = new VertexBuffer(gl, [
    1.0, 0.0, 0.0,
    0.0, 1.0, 0.0, 
    0.0, 0.0, 1.0 
 ])
+
+// uses unsigned ints with Uint8Array
+const vertexId = new VertexBuffer(gl, new Uint8Array([
+   0, 0, 0,
+   1, 1, 1, 
+   2, 2, 2 
+]))
 ```
+
+You can pass in other typed arrays to the constructor:<br>
+`Int8Array`, `Int16Array`, `Int32Array`, 
+`Uint8Array`, `Uint16Array`, `Uint32Array`, `Uint8ClampedArray`. 
+
+These can generally be used for integer types in your shader (`uint`, `int`, `uvec3`, `ivec3`, etc).
 
 ### `VAO` / Vertex array objects
 
