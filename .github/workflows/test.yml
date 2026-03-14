@@ -4,6 +4,10 @@ on:
     push:
         branches:
             - "**"
+        # stop this running on all tagged releases
+        # as it's already in the release workflow
+        tags-ignore:
+          - "**"
 
 jobs:
     build:
