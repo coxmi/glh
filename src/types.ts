@@ -42,6 +42,20 @@ export type DrawMode =
 // unwrap ts types to show a better hover message
 export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
+export type DeepMutable<T> =
+ T extends string | number | boolean | bigint | symbol | null | undefined
+   ? T
+   : T extends (...args: any[]) => any
+     ? T
+     : T extends readonly [...infer U]
+       ? { -readonly [K in keyof U]: DeepMutable<U[K]> }
+       : T extends ReadonlyArray<infer U>
+         ? DeepMutable<U>[]
+         : T extends object
+           ? { -readonly [K in keyof T]: DeepMutable<T[K]> }
+           : T;
+
+
 // check if number type is const/literal or just number type
 type IsConstNumber<T> = 
     T extends number 

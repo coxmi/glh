@@ -42,18 +42,17 @@ export type AttributeValueTypes<C extends number = 1> = {
     samplerCube: ScalarOrArray<number, C>
 }
 
-const GL = WebGL2RenderingContext
 export const GL_TYPES = {
-    float: GL.FLOAT, vec2: GL.FLOAT_VEC2, vec3: GL.FLOAT_VEC3, vec4: GL.FLOAT_VEC4,
-    int: GL.INT, ivec2: GL.INT_VEC2, ivec3: GL.INT_VEC3, ivec4: GL.INT_VEC4,
-    uint: GL.UNSIGNED_INT, uvec2: GL.UNSIGNED_INT_VEC2, uvec3: GL.UNSIGNED_INT_VEC3, uvec4: GL.UNSIGNED_INT_VEC4,
-    bool: GL.BOOL, bvec2: GL.BOOL_VEC2, bvec3: GL.BOOL_VEC3, bvec4: GL.BOOL_VEC4,
-    mat2: GL.FLOAT_MAT2, mat3: GL.FLOAT_MAT3, mat4: GL.FLOAT_MAT4,
-    mat2x3: GL.FLOAT_MAT2x3, mat2x4: GL.FLOAT_MAT2x4,
-    mat3x2: GL.FLOAT_MAT3x2, mat3x4: GL.FLOAT_MAT3x4,
-    mat4x2: GL.FLOAT_MAT4x2, mat4x3: GL.FLOAT_MAT4x3,
-    sampler2D: GL.SAMPLER_2D, 
-    samplerCube: GL.SAMPLER_CUBE
+    float: 0x1406, vec2: 0x8B50, vec3: 0x8B51, vec4: 0x8B52,
+    int: 0x1404, ivec2: 0x8B53, ivec3: 0x8B54, ivec4: 0x8B55,
+    uint: 0x1405, uvec2: 0x8DC6, uvec3: 0x8DC7, uvec4: 0x8DC8,
+    bool: 0x8B56, bvec2: 0x8B57, bvec3: 0x8B58, bvec4: 0x8B59,
+    mat2: 0x8B5A, mat3: 0x8B5B, mat4: 0x8B5C,
+    mat2x3: 0x8B65, mat2x4: 0x8B66,
+    mat3x2: 0x8B67, mat3x4: 0x8B68,
+    mat4x2: 0x8B69, mat4x3: 0x8B6A,
+    sampler2D: 0x8B5E,
+    samplerCube: 0x8B60
 } as const
 
 export const TYPE_SIZE = {
