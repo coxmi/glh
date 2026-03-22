@@ -90,6 +90,43 @@ function parseLayout<M extends any, const L extends Layout>(fields: L, createMet
     return result as Expand<DeepMutable<ParsedLayout<L, M>>>
 }
 
+const splitRE = /\.|\[|\]/
+
+declare function isNaN(number: unknown): boolean
+
+/**
+ * Used for uniforms where output names are a flat map of array/struct paths:
+ * e.g. struct.array[0].uColor[0]
+ */
+function parseFlat<N extends any, M extends any>(input: Record<string, any>, createMeta: (input: N, path: string) => M) {
+    const output: Record<string, any> = {}
+    // cache path segments for faster lookup
+    const cache = new Map()
+    for (const flatKey in input) {
+        const parts = cache.get(flatKey) || []
+        if (!parts.length) {
+            for (const part of flatKey.split(splitRE).filter(Boolean)) parts.push(isNaN(part) ? part : parseInt(part))            
+            cache.set(flatKey, parts)
+        }
+        let current = output
+        for (let i = 0; i < parts.length; i++) {
+            const key = parts[i]
+            if (i === parts.length - 1) {
+                current[key] = { [info]: createMeta(input[flatKey], flatKey) }
+                break
+            }
+            let next = current[key]
+            if (next === undefined) {
+                const nextKey = parts[i + 1]
+                next = typeof nextKey === "number" ? [] : {}
+                current[key] = next
+            }
+            current = next
+        }
+    }
+    return output
+}
+
 
 // proxy version that returns the proper value types per float/vec3/etc
 // this only does compile-time type validation, and bad values can still be passed to the proxy at runtime
@@ -109,27 +146,36 @@ type ParsedProxyLayout<L extends Layout> = {
     [K in keyof L]: ParsedProxyNode<L[K]>
 }
 
-type ValueTypeFromLayoutNode<N extends LayoutNode> = N extends ScalarNode 
-    ? AttributeValueTypes[N['type']]
-    : never
-
-export function createLayoutProxy<M extends any, const L extends Layout = Layout>(
+export function proxyFromLayout<M extends any, const L extends Layout = Layout>(
     layout: L, 
     options: {
-        meta: UserMetaFn<L[keyof L], M>,
-        get: (nodeInfo: M) => ValueTypeFromLayoutNode<L[keyof L]>,
-        set: (nodeInfo: M, value: ValueTypeFromLayoutNode<L[keyof L]>) => boolean
-    }
+        meta: UserMetaFn<LayoutNode, M>,
+        get: (meta: M) => any,
+        set: (meta: M, value: any) => boolean
+    },
 ) {
     const { meta, get, set } = options
     const parsed: Expand<DeepMutable<ParsedLayout<L, M>>> = parseLayout(layout, meta)
     return proxyGraph(parsed, get, set) as Expand<DeepMutable<ParsedProxyLayout<L>>>
 }
 
+export function proxyFromFlat<I, M extends any, R>(
+    layout: Record<string, any>, 
+    options: {
+        meta: (input: any, path: string) => M,
+        get: (meta: M) => any,
+        set: (meta: M, value: any) => boolean
+    },
+) {
+    const { meta, get, set } = options
+    const parsed = parseFlat(layout, meta)
+    return proxyGraph(parsed, get, set) as R
+}
+
 
 export const isProxy = (x: any): boolean => x.isProxy
 
-function proxyGraph<N, V>(target: Record<string | symbol, any>, get: (nodeInfo: N) => V, set: (nodeInfo: N, value: V) => boolean, cache = new WeakMap()) { 
+function proxyGraph<N, V>(target: Record<string | symbol, any>, get: (nodeInfo: N) => V, set: (nodeInfo: N, value: V) => boolean, cache = new WeakMap<WeakKey, any>()) { 
     const getChildProxy = (node: any) => getOrInsertComputed(cache, node, () => proxyGraph(node, get, set, cache))
     return new Proxy(target, {
         get(target, prop: string) {
@@ -137,10 +183,11 @@ function proxyGraph<N, V>(target: Record<string | symbol, any>, get: (nodeInfo: 
             const node = target[prop]
             if (!node) return
             if (Array.isArray(target) && prop === 'length') return target.length
-            // get node info and return proxy if it's not a leaf node
-            const nodeInfo = node[info]   
-            if (nodeInfo === undefined) return getChildProxy(node)
-            return get(nodeInfo)
+            const nodeInfo = node[info] 
+            // leaf node  
+            if (nodeInfo !== undefined) return get(nodeInfo)
+            // struct/array node, return proxy
+            return getChildProxy(node)
         },
         set(target, prop: string, value: any) {
             const node = target[prop]
@@ -161,7 +208,9 @@ function proxyGraph<N, V>(target: Record<string | symbol, any>, get: (nodeInfo: 
 
 // TODO: remove once WeakMap.prototype.getOrInsert | getOrInsertComputed gets broad support
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap/getOrInsert
-function getOrInsertComputed<T extends WeakKey, V>(cache: WeakMap<T, V>, key: T, fn: () => V) {
+function getOrInsertComputed<K, V>(cache: Map<K, V>, key: K, fn: () => V): V
+function getOrInsertComputed<K extends object, V>(cache: WeakMap<K, V>, key: K, fn: () => V): V
+function getOrInsertComputed(cache: Map<any, any> | WeakMap<any, any>, key: any, fn: () => any): any {
     if (cache.has(key)) return cache.get(key)
     const value = fn()
     cache.set(key, value)
