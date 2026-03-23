@@ -10,7 +10,7 @@ const libConfig = {
 	bundle: true,
 	sourcemap: true,
 	minify: true,
-	keepNames: true,
+	keepNames: false,
 	define: {
        'DEBUG': JSON.stringify(isDev)
    }

@@ -27,5 +27,5 @@ export function glTypeFromTypedArray(gl: WebGL2RenderingContext, arr: TypedArray
 
     // @ts-ignore: arr is type never, but we still need to handle 
     // this at runtime if an unsupported type is used
-    throw new Error(`Unsupported TypedArray: ${arr?.constructor?.name}. GL does how have an equivalent enum type.`)
+    throw new Error(`Unsupported TypedArray: ${arr?.constructor?.name}. GL does not have an equivalent enum type.`)
 }

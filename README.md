@@ -1,6 +1,6 @@
 # gleasy
 
-A lightweight (4.0kb) wrapper over webgl2, with no dependenices.
+A lightweight (4.2kb) wrapper over webgl2, with no dependenices.
 
 You'll need to know WebGL concepts, but won't have to think about binding attribute pointers and uniforms. The main primitives are designed to be as flexible as possible, while abstracting away a lot of the boilerplate.
 
@@ -372,4 +372,4 @@ setGLViewport(gl, canvas)
 
 ## Contributing
 
-Open to contributions and happy to review any PRs as long as they're from a human.
+Open to contributions

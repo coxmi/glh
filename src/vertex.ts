@@ -233,9 +233,9 @@ function isIntOrUintType(gl: WebGL2RenderingContext, glEnum: GLType) {
         glEnum === gl.INT 
         || glEnum === gl.UNSIGNED_INT 
         || glEnum === gl.BYTE 
-        || glEnum == gl.UNSIGNED_BYTE
-        || glEnum == gl.SHORT
-        || glEnum == gl.UNSIGNED_SHORT
+        || glEnum === gl.UNSIGNED_BYTE
+        || glEnum === gl.SHORT
+        || glEnum === gl.UNSIGNED_SHORT
     )
 }
 
@@ -259,12 +259,16 @@ function bindAttributes(gl: WebGL2RenderingContext, parsedLayouts: ParsedLayout[
                 gl.enableVertexAttribArray(attribLocation + i)
                 const str = stride * buffer.bytes
                 const off = (offset * buffer.bytes) + (i * bytesPerCol)
+                // TODO: work out normalization option (converts ints to -1→1 for signed, 0→1 for unsigned)
+                // needs to branch on attribute type (int vs float types), not buffer type, then normalisation 
+                // can work to convert int types to floats between the normalisation range
                 if (isIntOrUintType(gl, buffer.glType)) {
                     gl.vertexAttribIPointer(attribLocation + i, rows, buffer.glType, str, off)
                 } else {
                     gl.vertexAttribPointer(
                         attribLocation + i, rows, buffer.glType, 
-                        false,  // TODO: work out normalization option
+                        // TODO: normalisation, see above
+                        false,  
                         str, off
                     )
                 }

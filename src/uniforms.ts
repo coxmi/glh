@@ -1,5 +1,6 @@
 import type { AttributeType } from './attributes.ts'
 import type { ArrayOfLength, Expand, ScalarOrArray, RepeatTuple } from './types.ts'
+import { proxyFromFlat } from './layout.ts'
 
 
 /**
@@ -125,6 +126,8 @@ const setters: Record<GLenum, (gl: WebGL2RenderingContext, loc: WebGLUniformLoca
     [GL.SAMPLER_CUBE]: (gl, loc, v) => gl.uniform1i(loc, v)
 }
 
+const arraySuffix = '[0]'
+
 
 /**
  * create uniforms with typed setters
@@ -139,61 +142,30 @@ export function createUniforms<T extends UniformArgs>(
     program: WebGLProgram,
     initial?: Uniforms<T>
 ): Expand<Uniforms<T>> {
-
     const values: Record<string, any> = {}
-    const uniformInfo: Record<string, { loc: WebGLUniformLocation, type: number }> = {}
-
+    const info: Record<string, { loc: WebGLUniformLocation, type: number }> = {}
     const n = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS)
+    // const sizes = gl.getActiveUniforms(program, Array(n).map((_, i) => i), gl.UNIFORM_SIZE)
     for (let i = 0; i < n; i++) {
         const { name, type } = gl.getActiveUniform(program, i)!
-        const loc = gl.getUniformLocation(program, name)!
-        // normalize array names for setters
-        const n = name.endsWith('[0]') ? name.slice(0, -3) : name
-        uniformInfo[n] = { loc, type }
+        const loc = gl.getUniformLocation(program, name)! 
+        const n = name.endsWith(arraySuffix) ? name.replace(arraySuffix, '') : name
+        info[n] = { loc, type }
     }
-
-    function setUniform(path: string, value: any) {
-        const info = uniformInfo[path]
-        if (info) {
-            // leaf node, call the setter
-            const setter = setters[info.type]
-            if (!setter) return console.warn('Unsupported uniform type:', info.type, path)
-            setter(gl, info.loc, value)
-            // values[path] = value
-        } else if (Array.isArray(value)) {
-            // struct array
-            value.map((v, i) => setUniform(`${path}[${i}]`, v))
-        } else if (value && typeof value === 'object') {
-            // struct fields
-            for (const k in value) setUniform(path ? `${path}.${k}` : k, value[k])
-        } else {
-            console.warn(`Uniform '${path}' not used in shader`)
-        }
-    }
-
-    function createProxy(obj: any, path = ''): any {
-        return new Proxy(obj, {
-            get(_, prop: string) {
-                const val = obj[prop]
-                if (Array.isArray(val)) return val.map((v, i) => createProxy(v, `${path}${prop}[${i}]`))
-                if (val && typeof val === 'object') return createProxy(val, path ? `${path}${prop}.` : `${prop}.`)
-                return val
-            },
-            set(_, prop: string, v: any) {
-                obj[prop] = v
-                const fullPath = path ? `${path}.${prop}` : prop
-                setUniform(fullPath, v)
-                return true
-            }
-        })
-    }
-    
+    const proxy: any = proxyFromFlat(info, {
+        meta: (input, path) => ({ path, ...input }),
+        get: meta => values[meta.path],
+        set: (meta, value) => {
+            const setter = setters[meta.type]
+            if (!setter) console.warn('Unsupported uniform type:', meta.type, meta.path)
+            setter(gl, meta.loc, value)
+            values[meta.path] = value
+            return true
+        },
+    })
     if (initial) {
-        for (const key in initial) {
-            setUniform(key, initial[key])
-            values[key] = initial[key]
-        }
+        for (const key in initial) 
+            proxy[key] = initial[key]
     }
-
-    return createProxy(values) as Expand<Uniforms<T>>
+    return proxy as Expand<Uniforms<T>>
 }

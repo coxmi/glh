@@ -38,9 +38,9 @@ const layout = {
 describe('Layout proxy graph', () => {
     const proxyValues: Record<string, any> = {}
     const proxy = proxyFromLayout(layout, {
-        meta: (_node, path) => path,
-        get: path => proxyValues[path],
-        set: (path, value) => (proxyValues[path] = value, true)
+        meta: (_node, path) => ({ path }),
+        get: meta => proxyValues[meta.path],
+        set: (meta, value) => (proxyValues[meta.path] = value, true)
     });
     setterTests(proxy, proxyValues)
 })
@@ -64,9 +64,9 @@ const flatLayout = {
 describe('Layout proxy graph (flat object paths)', () => {
     const proxyValues: Record<string, any> = {}
     const proxy = proxyFromFlat(flatLayout, {
-        meta: (node, path) => path,
-        get: path => proxyValues[path],
-        set: (path, value) => (proxyValues[path] = value, true)
+        meta: (node, path) => ({ path }),
+        get: meta => proxyValues[meta.path],
+        set: (meta, value) => (proxyValues[meta.path] = value, true)
     });
     setterTests(proxy, proxyValues)
 })
