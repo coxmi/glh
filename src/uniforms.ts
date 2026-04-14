@@ -152,6 +152,7 @@ export function createUniforms<T extends UniformArgs>(
         const n = name.endsWith(arraySuffix) ? name.replace(arraySuffix, '') : name
         info[n] = { loc, type }
     }
+
     const proxy: any = proxyFromFlat(info, {
         meta: (input, path) => ({ path, ...input }),
         get: meta => values[meta.path],
@@ -164,8 +165,7 @@ export function createUniforms<T extends UniformArgs>(
         },
     })
     if (initial) {
-        for (const key in initial) 
-            proxy[key] = initial[key]
+        for (const key in initial) proxy[key] = initial[key]
     }
     return proxy as Expand<Uniforms<T>>
 }

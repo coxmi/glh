@@ -1,6 +1,6 @@
 # gleasy
 
-A lightweight (4.2kb) wrapper over webgl2, with no dependenices.
+A lightweight (4.4kb) wrapper over webgl2, with no dependenices.
 
 You'll need to know WebGL concepts, but won't have to think about binding attribute pointers and uniforms. The main primitives are designed to be as flexible as possible, while abstracting away a lot of the boilerplate.
 
@@ -218,6 +218,7 @@ In your program:
 const vertices = new VertexBuffer(gl, array)
 
 // describe the vertex attribute layout
+// using attribute locations
 vertices.setLayout([
    { type: 'vec3', location: 0 },
    { type: 'vec3', location: 1 },
@@ -226,11 +227,11 @@ vertices.setLayout([
 // create and use a shader
 shader.use()
 
-// draw directly from attribute locations
-vertices.bind()
-// explicit call to bindLayout() as it involves 
-// some overhead when compared to VAOs
+// explicit call to bind layout
 vertices.bindLayout()
+
+// draw directly from vertices
+vertices.bind()
 vertices.draw()
 
 ```

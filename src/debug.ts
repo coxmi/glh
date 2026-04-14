@@ -48,18 +48,3 @@ export function prettyConsole(log: string, source: string, isTrimmed: boolean) {
     }
     return [output.join('\n'), ...styles]
 }
-
-// TODO: better debugging tools for glEnum/buffer type compatibility
-// export function glEnumToName(glEnum: number) {
-//     const GL = WebGL2RenderingContext
-//     const map: Record<number, string> = {
-//         [GL.FLOAT]: 'float',
-//         [GL.INT]: 'int',
-//         [GL.UNSIGNED_INT]: 'uint',
-//         [GL.BYTE]: 'byte',
-//         [GL.UNSIGNED_BYTE]: 'unsigned_byte',
-//         [GL.SHORT]: 'short',
-//         [GL.UNSIGNED_SHORT]: 'unsigned_short',
-//     }
-//     return map[glEnum] || null
-// }

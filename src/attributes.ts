@@ -1,7 +1,7 @@
 import type { ArrayOfLength, ScalarOrArray, RepeatTuple } from './types.ts'
 
-export type GlType = typeof GL_TYPES[AttributeType]
-export type AttributeType = keyof typeof GL_TYPES
+export type GlslType = typeof GLSL_TYPES[AttributeType]
+export type AttributeType = keyof typeof GLSL_TYPES
 
 // limit attribute types depending on use
 // e.g. no bool/bvec or sampler types in vertex attributes
@@ -42,7 +42,7 @@ export type AttributeValueTypes<C extends number = 1> = {
     samplerCube: ScalarOrArray<number, C>
 }
 
-export const GL_TYPES = {
+export const GLSL_TYPES = {
     float: 0x1406, vec2: 0x8B50, vec3: 0x8B51, vec4: 0x8B52,
     int: 0x1404, ivec2: 0x8B53, ivec3: 0x8B54, ivec4: 0x8B55,
     uint: 0x1405, uvec2: 0x8DC6, uvec3: 0x8DC7, uvec4: 0x8DC8,
@@ -54,6 +54,14 @@ export const GL_TYPES = {
     sampler2D: 0x8B5E,
     samplerCube: 0x8B60
 } as const
+
+
+export const GLSL_INT_TYPES = new Set([
+    GLSL_TYPES.int, GLSL_TYPES.ivec2, GLSL_TYPES.ivec3, GLSL_TYPES.ivec4,
+    GLSL_TYPES.uint, GLSL_TYPES.uvec2, GLSL_TYPES.uvec3, GLSL_TYPES.uvec4,
+    GLSL_TYPES.bool, GLSL_TYPES.bvec2, GLSL_TYPES.bvec3, GLSL_TYPES.bvec4
+] as Array<number>)
+
 
 export const TYPE_SIZE = {
     float: { row: 1, col: 1 },

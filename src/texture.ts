@@ -75,12 +75,12 @@ export class Texture {
         // NOTE: WebGL doesn't allow querying for pixelStorei values
         if (options.flip) gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
 
-        const TEXTURE_INTERPOLATE = textureInterpolate(gl, options)
-        const TEXTURE_WRAP = textureWrap(gl, options)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, TEXTURE_INTERPOLATE)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, TEXTURE_INTERPOLATE)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, TEXTURE_WRAP)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, TEXTURE_WRAP)
+        const TEX_INTERPOLATE = textureInterpolate(gl, options)
+        const TEX_WRAP = textureWrap(gl, options)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, TEX_INTERPOLATE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, TEX_INTERPOLATE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, TEX_WRAP)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, TEX_WRAP)
         
         gl.bindTexture(gl.TEXTURE_2D, null)
         this.texture = texture
@@ -98,9 +98,5 @@ export class Texture {
 
     delete() {
         this.gl.deleteTexture(this.texture)
-        // @ts-expect-error
-        delete this.texture
-        // @ts-expect-error
-        delete this.gl
     }
 }

@@ -20,7 +20,7 @@ export type UintTypedArray =
     | Uint32Array
     | Uint8ClampedArray
 
-export type GLType = 
+export type GLBufferType = 
     | WebGLRenderingContextBase['BYTE'] 
     | WebGLRenderingContextBase['UNSIGNED_BYTE']
     | WebGLRenderingContextBase['SHORT'] 

@@ -37,7 +37,7 @@ const layout = {
 
 describe('Layout proxy graph', () => {
     const proxyValues: Record<string, any> = {}
-    const proxy = proxyFromLayout(layout, {
+    const proxy = proxyFromLayout(layout, false, {
         meta: (_node, path) => ({ path }),
         get: meta => proxyValues[meta.path],
         set: (meta, value) => (proxyValues[meta.path] = value, true)

@@ -1,4 +1,4 @@
-import type { TypedArray, GLType } from "./types.ts"
+import type { TypedArray, GLBufferType } from "./types.ts"
 
 /**
  * Set the GL viewport to the currently displayed dimensions of the canvas
@@ -10,10 +10,10 @@ export function setGLViewport(gl: WebGL2RenderingContext, canvas: HTMLCanvasElem
     const height = rect.height * dpr
     canvas.width = width
     canvas.height = height
-    gl.viewport(0, 0, width, height)    
+    gl.viewport(0, 0, width, height)
 }
 
-export function glTypeFromTypedArray(gl: WebGL2RenderingContext, arr: TypedArray): GLType {
+export function glBufferFormat(gl: WebGL2RenderingContext, arr: TypedArray): GLBufferType {
     if (arr instanceof Float32Array) return gl.FLOAT
     if (arr instanceof Int32Array) return gl.INT
     if (arr instanceof Uint32Array) return gl.UNSIGNED_INT
@@ -27,5 +27,5 @@ export function glTypeFromTypedArray(gl: WebGL2RenderingContext, arr: TypedArray
 
     // @ts-ignore: arr is type never, but we still need to handle 
     // this at runtime if an unsupported type is used
-    throw new Error(`Unsupported TypedArray: ${arr?.constructor?.name}. GL does not have an equivalent enum type.`)
+    throw new Error(`Unsupported TypedArray: ${arr?.constructor?.name}`)
 }
