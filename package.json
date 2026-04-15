@@ -1,6 +1,6 @@
 {
   "name": "gleasy",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "WebGL2 helper library",
   "author": "Michael Cox",
   "license": "GPL-3.0-only",
@@ -22,10 +22,10 @@
   ],
   "type": "module",
   "exports": {
-      ".": {
-        "import": "./dist/index.js",
-        "types": "./dist/index.d.ts"
-      }
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   },
   "scripts": {
     "dev": "node build.js --watch",
