@@ -101,6 +101,64 @@ function normalizedValues() {
     vao.draw()
 }
 
+function instances() {
+
+    const vertexSrc = `
+        #version 300 es
+        in vec2 aPos;
+        in vec2 aCoord;
+        in vec3 aColor;
+        out vec3 vColor;
+        uniform vec2 uResolution;
+        void main() {
+            vColor = aColor;
+            gl_Position = vec4(aCoord + aPos, 0., 1.);
+        }
+    `
+
+    const fragmentSrc = `
+        #version 300 es
+        precision highp float;
+        in vec3 vColor;
+        out vec4 outColor;
+        void main() {
+            outColor = vec4(vColor, 1.);
+        }
+    `
+
+    const vertex = new VertexBuffer(gl, new Float32Array([
+         0.0,  0.5,  
+        -0.5, -0.5,
+         0.5, -0.5,
+    ]))
+
+    const instancePos = new VertexBuffer(gl, new Float32Array([
+        -0.5, -0.5,
+        0, 0,
+        0.5, 0.5,
+    ]))
+
+    const instanceColor = new VertexBuffer(gl, new Float32Array([
+        1, 0, 0,
+        0, 1, 0,
+        0, 0, 1
+    ]))
+
+    const shader = new Shader(gl, vertexSrc, fragmentSrc)
+    const vao = new VAO(gl, shader, {
+        buffer: vertex,
+        layout: {
+            aPos: { type: 'vec2' },
+            aCoord: { type: 'vec2', buffer: instancePos, divisor: 1 },
+            aColor: { type: 'vec3', buffer: instanceColor, divisor: 1 }
+        }
+    })
+
+    shader.use()
+    vao.bind()
+    vao.draw()
+}
+
 
 function iuTypes() {
     const vertexSrc = `
@@ -773,6 +831,8 @@ window.interleavedAttributes = interleavedAttributes
 window.multipleBuffers = multipleBuffers
 // @ts-ignore
 window.normalizedValues = normalizedValues
+// @ts-ignore
+window.instances = instances
 // @ts-ignore
 window.iuTypes = iuTypes
 // @ts-ignore

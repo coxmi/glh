@@ -9,15 +9,17 @@ import type { Shader } from './shader.ts'
 // user input args
 
 type VertexSchema = { 
-    buffer?: VertexBuffer,
+    buffer?: VertexBuffer
     location?: number
     normalize?: boolean
+    divisor?: number
 }
 
 type VertexSchemaWithLocation = { 
-    buffer?: VertexBuffer,
+    buffer?: VertexBuffer
     location: number
     normalize?: boolean
+    divisor?: number
 }
 
 type VertexLayoutArgs = {
@@ -38,9 +40,10 @@ type SingleVertexLayoutArgs = VertexLayoutArray<VertexSchemaWithLocation>
 
 type ParsedVertexFields = { 
     path: string
-    buffer?: VertexBuffer,
+    buffer?: VertexBuffer
     location?: number
     normalize: boolean
+    divisor?: number
 }
 
 type ParsedVertexLayout = ParsedLayout<
@@ -155,28 +158,47 @@ export class VertexIndex {
 }
 
 function parseVertexLayout(config: VertexLayoutArgs) {
+    // TODO: work out proper logic for instance buffers, this is a quick fix
+    const instanceBuffers = new Set<any>()
     const layout = parseLayout<VertexSchema, ParsedVertexFields>(config.layout, config.buffer, (node, path) => {
+        if (node.divisor) instanceBuffers.add(node.buffer)
         return { 
             path, 
             location: node?.location, 
-            normalize: !!node.normalize 
+            normalize: !!node.normalize,
+            divisor: node?.divisor
         }
-    })
+    }) 
 
+    let instances = 0
     let vertices = 0
     for (const { buffer, stride } of layout.bindings) {
         const elements = buffer.count / stride
-        if (!vertices) vertices = elements
         const errName = `${buffer.constructor.name} – ${buffer.buffer.constructor.name}(elements:${buffer.count})`
+
+        // TODO: add tests for instances, this is a quick fix
+        if (instanceBuffers.has(buffer)) {
+            if (!instances) instances = elements
+            if (elements !== instances) console.warn(`${errName}: instance count does not match other buffers`)
+            continue   
+        }
+
         // validate stride is a factor of the overall buffer length
         if (buffer.count % stride !== 0) {
             console.warn(`${errName}: attribute stride (${stride}) is not a factor of buffer size (${buffer.count})`)
         }
         // check multiple buffers have the same number of vertices
+        if (!vertices) vertices = elements
         if (elements !== vertices) {
             console.warn(`${errName}: Vertex count (${vertices}) does not match other buffers (${elements})`)
         }
     }
+
+    // TODO: fix types
+    // @ts-expect-error
+    layout.vertices = vertices
+    // @ts-expect-error
+    layout.instances = instances
     return layout
 }
 
@@ -188,7 +210,7 @@ function bindVertexLayout(
     for (const { buffer, stride, layout } of parsedLayout.bindings) {
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer.buffer)
         for (const attribute of layout) {
-            const { type, path, location, normalize, size, col, offset } = attribute
+            const { type, path, location, normalize, size, col, offset, divisor } = attribute
             const attribLocation = location ?? (program ? gl.getAttribLocation(program, path) : -1)
             if (attribLocation < 0) {
                 console.warn(
@@ -216,6 +238,7 @@ function bindVertexLayout(
                         str, off
                     )
                 }
+                if (divisor !== undefined) gl.vertexAttribDivisor(attribLocation + i, divisor)
             }
         }
     }
@@ -261,6 +284,7 @@ function isIntOrUintBufferType(glEnum: number) {
 export class VAO {
     vao: WebGLVertexArrayObject
     vertexCount: number
+    instanceCount: number
     gl: WebGL2RenderingContext
 
     constructor(gl: WebGL2RenderingContext, shader: Shader, config: VertexLayoutArgs)
@@ -271,6 +295,8 @@ export class VAO {
         const layout = parseVertexLayout(config)
         const { buffer, stride } = layout.bindings[0]
         this.vertexCount = buffer.count / stride
+        // @ts-expect-error
+        this.instanceCount = layout.instances
         this.vao = gl.createVertexArray()
         gl.bindVertexArray(this.vao)
         bindVertexLayout(gl, layout, shader?.program)
@@ -287,7 +313,11 @@ export class VAO {
     }
 
     draw(mode: DrawMode = this.gl.TRIANGLES) {
-        this.gl.drawArrays(mode, 0, this.vertexCount)
+        if (this.instanceCount) {
+            this.gl.drawArraysInstanced(mode, 0, this.vertexCount, this.instanceCount)
+        } else {
+            this.gl.drawArrays(mode, 0, this.vertexCount)
+        }
     }
 
     delete() {

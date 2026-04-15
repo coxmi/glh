@@ -129,8 +129,9 @@ function computeLayout<
 ): ParsedNode<Node, OutputFields> {
 
     const { bufferInfo, meta } = ctx
-    const buffer = ctx.buffer = (isRoot ? node.buffer : ctx.buffer) || ctx.buffer
+    const buffer = ctx.buffer = node.buffer = (isRoot ? node.buffer : ctx.buffer) || ctx.buffer
     if (buffer === undefined) throw new Error(`No buffer set for ${path}`)
+
     const binding = getOrInsert(bufferInfo, buffer, {
         buffer,
         stride: 0,
