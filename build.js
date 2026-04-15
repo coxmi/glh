@@ -6,6 +6,7 @@ const isDev = process.argv[2] === '--watch'
 const libConfig = {
 	entryPoints: ['src/index.ts'],
 	target: 'esnext',
+	format: 'esm',
 	outdir: 'dist',
 	bundle: true,
 	sourcemap: true,
