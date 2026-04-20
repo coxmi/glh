@@ -1,6 +1,6 @@
 # gleasy
 
-A lightweight (4.7kb), fully-typed, wrapper over webgl2 with no dependenices.
+A lightweight (4.7kb) fully-typed wrapper over webgl2 with no dependenices.
 
 You'll need to know WebGL concepts, but won't have to think about binding attribute pointers and uniforms. The main primitives are designed to be as flexible as possible, while abstracting away a lot of the boilerplate.
 
@@ -66,8 +66,10 @@ const vao = new VAO(gl, shader, {
    }
 })
 
-// draw!
+// use the shader
 shader.use()
+
+// bind and draw the vertex array object
 vao.bind()
 vao.draw()
 ```
@@ -259,7 +261,7 @@ vao.draw()
 The layout definition supports attributes from separate buffers:
 
 ```ts
-// set a separate buffer for each attribute:
+// set a separate buffer for each attribute
 const vao = new VAO(gl, shader, {
    layout: { 
       aPosition: { type: 'vec3', buffer: position }, 
@@ -282,7 +284,7 @@ void main() {
 ```
 
 ```ts
-// no need to pass in a shader:
+// no need to pass in a shader
 const vao = new VAO(gl, {
    buffer: position, // default buffer
    layout: [
@@ -494,7 +496,7 @@ vertices.draw()
 
 ## Roadmap
 
-* Uniform buffer objects and std140 layouts
+* Fully typed uniform buffer objects and std140 layouts
 * Transform buffers for use in simulations
 * Shader includes
 * Some fun examples

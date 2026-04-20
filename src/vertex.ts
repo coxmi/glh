@@ -48,12 +48,16 @@ type ParsedVertexFields = {
     normalize: boolean
 }
 
-type ParsedVertexLayout = ParsedLayout<
-    VertexSchema, 
-    ParsedVertexFields,
-    VertexBindingFields, 
-    Layout<VertexSchema>
->
+type ParsedVertexLayout = {
+    instances: number,
+    vertices: number,
+    bindings: ParsedLayout<
+        VertexSchema, 
+        ParsedVertexFields,
+        VertexBindingFields, 
+        Layout<VertexSchema>
+    >['bindings']
+}
 
 /**
  * ```ts
@@ -204,12 +208,11 @@ function parseVertexLayout(config: VertexLayoutArgs) {
         }
     }
 
-    // TODO: fix types
-    // @ts-expect-error
-    layout.vertices = vertices
-    // @ts-expect-error
-    layout.instances = instances < Infinity ? instances : 0
-    return layout
+    return {
+        vertices,
+        instances: instances < Infinity ? instances : 0,
+        bindings: layout.bindings
+    }
 }
 
 function bindVertexLayout(
@@ -305,7 +308,6 @@ export class VAO {
         const layout = parseVertexLayout(config)
         const { buffer, stride } = layout.bindings[0]
         this.vertexCount = buffer.count / stride
-        // @ts-expect-error
         this.instanceCount = layout.instances
         this.vao = gl.createVertexArray()
         gl.bindVertexArray(this.vao)
