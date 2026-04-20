@@ -33,10 +33,10 @@ jobs:
             - name: create archive
               run: |
                   zip -r release.zip \
-                  dist/index.js \
-                  dist/index.d.ts \
+                  dist/ \
+                  examples/ \
                   README.md \
-                  LICENSE
+                  LICENSE \
             - name: github publish release
               uses: softprops/action-gh-release@v2
               with:
