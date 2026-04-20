@@ -76,7 +76,7 @@ vao.draw()
 
 
 
-See the examples in [examples/basic-usage](https://github.com/coxmi/gleasy/tree/main/examples/basic-usage) and [main.ts](https://github.com/coxmi/gleasy/blob/main/examples/basic-usage/main.ts) to see how the various APIs described below are used.
+See the examples in [examples/basic-usage](https://github.com/coxmi/gleasy/tree/main/examples/basic-usage/src).
 
 
 
