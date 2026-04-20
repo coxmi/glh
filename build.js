@@ -32,8 +32,6 @@ if (isDev) {
 		examples.watch()
 	])
 } else {
-	await Promise.all([
-		build(libConfig),
-		build(exampleConfig)
-	])
+	await build(libConfig)
+	await build(exampleConfig)
 }
