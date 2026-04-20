@@ -1,30 +1,27 @@
 import { context, build } from 'esbuild'
 import { glob } from 'glob'
 
-const isDev = process.argv[2] === '--watch' 
+const isDev = process.argv[2] === '--dev' 
 
 const libConfig = {
-	entryPoints: ['src/index.ts'],
 	target: 'esnext',
 	format: 'esm',
+	entryPoints: ['src/index.ts'],
 	outdir: 'dist',
 	bundle: true,
 	sourcemap: true,
 	minify: true,
-	keepNames: false,
-	define: {
-       'DEBUG': JSON.stringify(isDev)
-   }
+	keepNames: false
 }
 
 const exampleConfig = {
-    entryPoints: glob.sync('examples/**/main.ts'),
-    entryNames: '[dir]/dist/[name]',
+	target: 'esnext',
+    entryPoints: glob.sync('examples/*/src/*.ts'),
+    entryNames: '[dir]/../dist/[name]',
     outdir: 'examples',
     outbase: 'examples',
     bundle: true,
-    sourcemap: true,
-    platform: 'browser',
+    keepNames: true
 }
 
 if (isDev) {

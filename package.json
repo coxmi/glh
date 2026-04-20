@@ -28,9 +28,9 @@
     }
   },
   "scripts": {
-    "dev": "node build.js --watch",
-    "test": "tsc --noEmit && node --require ts-node/register --test '**/*.test.ts'",
-    "types": "tsc --project tsconfig.json --noEmit false --declaration --emitDeclarationOnly --outDir dist",
+    "dev": "node build.js --dev",
+    "test": "tsc -p tsconfig.test.json --noEmit && node --require ts-node/register --test '**/*.test.ts'",
+    "types": "tsc --noEmit false --declaration --emitDeclarationOnly --outDir dist",
     "build": "npm run types && node build.js && npm run size",
     "ci": "npm run types && node build.js && npm run test",
     "screenshots": "node --require ts-node/register tools/update-screenshots.ts",

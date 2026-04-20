@@ -120,6 +120,7 @@ export async function updateScreenshots(whitelist?: string[]) {
             console.error('failed:', htmlFile)
             // stacks are just from playwright, so we can 
             // just ignore them for now
+            if (!(e instanceof Error)) throw e
             e.stack = ''
             console.error(e)
         }
@@ -158,6 +159,7 @@ export async function compareWithScreenshot(
         const screenshotPng = await pngFromFile(screenshotPath)
         compare = comparePng(png, screenshotPng)
     } catch(e) {
+        if (!(e instanceof Error)) throw e
         e.message = `${name} - ${e.message}`
         throw e
     }
@@ -165,14 +167,14 @@ export async function compareWithScreenshot(
     // pick a small but non-zero pizel threshold, as some comparisons keep jamming up CI
     if (compare.pixels > 20) {
         await writePng(compare.diff, diffPath)
-        const format = num => Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(num)
+        const format = (num: number) => Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(num)
         throw new Error(`${name}: ${format(compare.pixels)} pixels differ, saved diff at: ${diffName}`)
     }
     return true
 }
 
 
-export function getExampleInfo(htmlFile) {
+export function getExampleInfo(htmlFile: string) {
     let fileNameBase = path.basename(htmlFile).replace(/\.html$/, '')
     if (fileNameBase === 'index') fileNameBase = ''
     const folderName = path.dirname(htmlFile)

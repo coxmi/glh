@@ -25,7 +25,7 @@ export function glBufferFormat(gl: WebGL2RenderingContext, arr: TypedArray): GLB
     // Unsupported TypedArray types: 
     // Float16Array, Float64Array, BigInt64Array, BigUint64Array
 
-    // @ts-ignore: arr is type never, but we still need to handle 
+    // @ts-expect-error: arr is type never, but we still need to handle 
     // this at runtime if an unsupported type is used
     throw new Error(`Unsupported TypedArray: ${arr?.constructor?.name}`)
 }
