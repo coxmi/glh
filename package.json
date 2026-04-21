@@ -1,6 +1,6 @@
 {
   "name": "gleasy",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "WebGL2 helper library",
   "author": "Michael Cox",
   "license": "GPL-3.0-only",
