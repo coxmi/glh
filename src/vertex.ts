@@ -1,4 +1,4 @@
-import { GLSL_TYPES, GLSL_INT_TYPES } from './attributes.ts'
+import { GLSL_TYPES } from './attributes.ts'
 import { parseLayout } from './layout.ts'
 import { glBufferFormat } from './util.ts'
 import type { Layout, VertexLayout, VertexLayoutArray, ParsedLayout } from './layout.ts'
@@ -107,10 +107,8 @@ export class VertexBuffer {
     }
 
     draw(mode: DrawMode = this.gl.TRIANGLES) {
-        if (!this.layout) throw new Error('Cannot draw vertex buffer directly without a layout description');
-        const { stride } = this.layout.bindings[0]
-        const vertexCount = this.count / stride
-        this.gl.drawArrays(mode, 0, vertexCount)
+        if (!this.layout) throw new Error('Cannot draw vertex buffer directly without a layout description')
+        this.gl.drawArrays(mode, 0, this.layout.vertices)
     }
 
     delete() {
@@ -181,7 +179,9 @@ function parseVertexLayout(config: VertexLayoutArgs) {
     let instances = Infinity
     let vertices = 0
     for (const { buffer, stride, divisor } of layout.bindings) {
-        const elements = buffer.count / stride
+
+        const bytes = buffer.count * buffer.bytes
+        const elements = bytes / stride
         const errName = `${buffer.constructor.name} – ${buffer.buffer.constructor.name}(elements:${buffer.count})`
 
         // validate instance could is equal for each instance buffer
@@ -198,8 +198,8 @@ function parseVertexLayout(config: VertexLayoutArgs) {
         }
 
         // validate stride is a factor of the overall buffer length
-        if (buffer.count % stride !== 0) {
-            console.warn(`${errName}: attribute stride (${stride}) is not a factor of buffer size (${buffer.count})`)
+        if (bytes % stride !== 0) {
+            console.warn(`${errName}: attribute stride (${stride}) is not a factor of buffer size (${bytes})`)
         }
         // check multiple buffers have the same number of vertices
         if (!vertices) vertices = elements
@@ -223,7 +223,7 @@ function bindVertexLayout(
     for (const { buffer, stride, layout, divisor } of parsedLayout.bindings) {
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer.buffer)
         for (const attribute of layout) {
-            const { type, path, location, normalize, size, col, offset } = attribute
+            const { type, path, location, normalize, row, col, offset } = attribute
             const attribLocation = location ?? (program ? gl.getAttribLocation(program, path) : -1)
             if (attribLocation < 0) {
                 console.warn(
@@ -232,23 +232,24 @@ function bindVertexLayout(
                 )
                 continue
             }
-            const attrIntType = isIntOrUintAttrType(type)
+            const attrIntType = isIntOrUintGlEnum(type)
             if (attrIntType && normalize) console.warn(`(${path}) normalize is ignored for integer vertex attributes`)
-            const bytesPerCol = size * buffer.bytes
+            const bytesPerCol = row * buffer.bytes
             for (let i = 0; i < col; i++) {
                 gl.enableVertexAttribArray(attribLocation + i)
-                const str = stride * buffer.bytes
-                const off = (offset * buffer.bytes) + (i * bytesPerCol)
+                const off = offset + (i * bytesPerCol)
                 if (attrIntType) {
-                    gl.vertexAttribIPointer(attribLocation + i, size, buffer.glFormat, str, off)
+                    gl.vertexAttribIPointer(attribLocation + i, row, buffer.glFormat, stride, off)
                 } else {
                     gl.vertexAttribPointer(
-                        attribLocation + i, size, 
+                        attribLocation + i, 
+                        row, 
                         buffer.glFormat, 
                         // vertexAttribPointer converts int types to floats between the normalisation range
                         // (-1→1 for signed, 0→1 for unsigned)
                         normalize,  
-                        str, off
+                        stride, 
+                        off
                     )
                 }
                 if (divisor > 0) gl.vertexAttribDivisor(attribLocation + i, divisor)
@@ -259,11 +260,7 @@ function bindVertexLayout(
 }
 
 
-function isIntOrUintAttrType(attrType: keyof typeof GLSL_TYPES) {
-    return GLSL_INT_TYPES.has(GLSL_TYPES[attrType])
-}
-
-function isIntOrUintBufferType(glEnum: number) {
+function isIntOrUintGlEnum(glEnum: number) {
     // same as matching against:
     // gl.INT, gl.UNSIGNED_INT, gl.BYTE, gl.UNSIGNED_BYTE, gl.SHORT, gl.UNSIGNED_SHORT
     return glEnum <= 5125 && glEnum >= 5120
@@ -306,8 +303,7 @@ export class VAO {
         const config = (b ?? a) as VertexLayoutArgs
         const shader = b ? (a as Shader) : undefined
         const layout = parseVertexLayout(config)
-        const { buffer, stride } = layout.bindings[0]
-        this.vertexCount = buffer.count / stride
+        this.vertexCount = layout.vertices
         this.instanceCount = layout.instances
         this.vao = gl.createVertexArray()
         gl.bindVertexArray(this.vao)

@@ -4,7 +4,7 @@
  */
 
 import { GLSL_TYPES, TYPE_SIZE, STD140_ALIGN } from './attributes.ts'
-import type { AttributeType, AttributeValueTypes, VertexAttributeType } from './attributes.ts'
+import type { GlslType, AttributeType, AttributeValueTypes, VertexAttributeType } from './attributes.ts'
 import type { Expand, DeepMutable, ArrayOfLength } from './types.ts'
 
 
@@ -40,7 +40,12 @@ type ArrayNode<T> = {
     buffer?: Binding
 }
 
-type Binding = any
+type Binding =  {
+    buffer: WebGLBuffer
+    count: number
+    bytes: number
+    glFormat: number
+}
 
 
 // subtypes for narrowing schema input
@@ -52,20 +57,18 @@ export type VertexLayoutArray<InputFields> = Record<number, ScalarNode<InputFiel
 // parsed/output types
 
 type BindingInfo<OutputFields, BindingFields> = {
-    stride: number,
-    buffer: Binding,
+    stride: number
+    buffer: Binding
     layout: Array<ParsedAttributeInfo<OutputFields>>
 } & BindingFields
 
 type ParsedAttributeInfo<OutputFields> = {
-    type: AttributeType
+    type: GlslType
     path: string
-    size: number
+    row: number
     col: number
     align: number
     offset: number
-    stride?: number
-    buffer: Binding
 } & OutputFields
 
 
@@ -141,20 +144,18 @@ function computeLayout<
     } as BindingInfo<OutputFields, BindingFields>)
 
     if (node.type in GLSL_TYPES) {
-        const { row: logicalSize, col } = TYPE_SIZE[node.type as VertexAttributeType]
-        const stride = binding.stride
+        const { row, col } = TYPE_SIZE[node.type as VertexAttributeType]
         const attr: ParsedAttributeInfo<OutputFields> = {
-            type: node.type as AttributeType, // is type required?
+            type: GLSL_TYPES[node.type as keyof typeof GLSL_TYPES],
             path, 
-            buffer,
-            offset: stride,
-            size: logicalSize, 
+            offset: binding.stride,
+            row, 
             col, 
-            align: stride,            
+            align: STD140_ALIGN[node.type as keyof typeof STD140_ALIGN],
             ...meta(node as ScalarNode<InputFields>, path, binding)
         }
         binding.layout.push(attr)
-        binding.stride += logicalSize
+        binding.stride += row * col * binding.buffer.bytes
         const scalar = { [info]: attr }
         return scalar as ParsedNode<typeof node, OutputFields>
 
@@ -174,14 +175,16 @@ function computeLayout<
 
 
 export function parseLayout<
-    InputFields, 
-    OutputFields, 
-    BindingFields,
+    InputFields, OutputFields, BindingFields,
     const L extends Layout<InputFields> = Layout<InputFields>
 >(
     layout: L,
-    defaultBuffer: Binding,
-    meta: (node: ScalarNode<InputFields>, path: string, buffer: BindingInfo<OutputFields, BindingFields>) => OutputFields,
+    defaultBuffer: Binding | undefined,
+    meta: (
+        node: ScalarNode<InputFields>, 
+        path: string, 
+        buffer: BindingInfo<OutputFields, BindingFields>
+    ) => OutputFields,
 ) {
     const ctx: LayoutCtx<InputFields, OutputFields, BindingFields> = {
        buffer: defaultBuffer,
@@ -266,7 +269,7 @@ type ParsedProxyLayout<L extends Layout<InputFields>, InputFields = {}> = {
 
 export function proxyFromLayout<InputFields, OutputFields = {}, const L extends {} = Layout<InputFields>>(
     layout: L,
-    buffer: Binding, 
+    defaultBuffer: Binding, 
     options: {
         meta: (node: ScalarNode<InputFields>, path: string) => OutputFields,
         get: (meta: ParsedAttributeInfo<OutputFields>) => any,
@@ -274,7 +277,7 @@ export function proxyFromLayout<InputFields, OutputFields = {}, const L extends 
     },
 ) {
     const { meta, get, set } = options
-    const { attributes } = parseLayout<InputFields, OutputFields, {}>(layout, buffer, meta || (() => {}))
+    const { attributes } = parseLayout<InputFields, OutputFields, {}>(layout, defaultBuffer, meta || (() => {}))
     return proxyGraph(attributes, get, set) as Expand<DeepMutable<ParsedProxyLayout<L>>>
 }
 

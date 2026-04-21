@@ -34,10 +34,17 @@ const layout = {
     }
 } as const
 
-
 describe('Layout proxy graph', () => {
+    // mock the default buffer, 
+    // since there's no gl in node
+    const defaultBuffer = {
+        buffer: {},
+        count: 0,
+        bytes: 0,
+        glFormat: 0
+    }
     const proxyValues: Record<string, any> = {}
-    const proxy = proxyFromLayout(layout, false, {
+    const proxy = proxyFromLayout(layout, defaultBuffer, {
         meta: (_node, path) => ({ path }),
         get: meta => proxyValues[meta.path],
         set: (meta, value) => (proxyValues[meta.path] = value, true)

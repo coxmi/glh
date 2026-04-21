@@ -56,11 +56,11 @@ export const GLSL_TYPES = {
 } as const
 
 
-export const GLSL_INT_TYPES = new Set([
-    GLSL_TYPES.int, GLSL_TYPES.ivec2, GLSL_TYPES.ivec3, GLSL_TYPES.ivec4,
-    GLSL_TYPES.uint, GLSL_TYPES.uvec2, GLSL_TYPES.uvec3, GLSL_TYPES.uvec4,
-    GLSL_TYPES.bool, GLSL_TYPES.bvec2, GLSL_TYPES.bvec3, GLSL_TYPES.bvec4
-] as Array<number>)
+// export const GLSL_INT_TYPES = new Set([
+//     GLSL_TYPES.int, GLSL_TYPES.ivec2, GLSL_TYPES.ivec3, GLSL_TYPES.ivec4,
+//     GLSL_TYPES.uint, GLSL_TYPES.uvec2, GLSL_TYPES.uvec3, GLSL_TYPES.uvec4,
+//     GLSL_TYPES.bool, GLSL_TYPES.bvec2, GLSL_TYPES.bvec3, GLSL_TYPES.bvec4
+// ] as Array<number>)
 
 
 export const TYPE_SIZE = {
