@@ -45,8 +45,8 @@ function textureInterpolate(gl: WebGL2RenderingContext, options: TextureOptions 
  */
 export class Texture {
 
-    texture: WebGLTexture
-    gl: WebGL2RenderingContext
+    readonly texture: WebGLTexture
+    readonly gl: WebGL2RenderingContext
 
     constructor(
     	gl: WebGL2RenderingContext, 

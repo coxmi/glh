@@ -20,12 +20,16 @@ type LayoutNode<InputFields> =
         | StructNode<InputFields>
     >
 
-type ScalarNode<InputFields, VertexOnly extends boolean = false> = { 
-    type: VertexOnly extends true 
-        ? VertexAttributeType 
-        : AttributeType
-    buffer?: Binding
-} & InputFields
+type ScalarNode<
+    InputFields,
+    T extends AttributeType = AttributeType
+> = {
+    [K in T]: {
+        type: K,
+        buffer?: Binding
+        value?: AttributeValueTypes[K]
+    } & InputFields
+}[T]
 
 type StructNode<InputFields> = { 
     type: 'struct'
@@ -41,17 +45,14 @@ type ArrayNode<T> = {
 }
 
 type Binding =  {
-    buffer: WebGLBuffer
-    count: number
     bytes: number
-    glFormat: number
-}
+} & any
 
 
 // subtypes for narrowing schema input
 
-export type VertexLayout<InputFields> = Record<string | number, ScalarNode<InputFields, true>>
-export type VertexLayoutArray<InputFields> = Record<number, ScalarNode<InputFields, true>>
+export type VertexLayout<InputFields> = Record<string | number, ScalarNode<InputFields, VertexAttributeType>>
+export type VertexLayoutArray<InputFields> = Record<number, ScalarNode<InputFields, VertexAttributeType>>
 
 
 // parsed/output types
@@ -62,11 +63,12 @@ type BindingInfo<OutputFields, BindingFields> = {
     layout: Array<ParsedAttributeInfo<OutputFields>>
 } & BindingFields
 
-type ParsedAttributeInfo<OutputFields> = {
+export type ParsedAttributeInfo<OutputFields> = {
     type: GlslType
     path: string
     row: number
     col: number
+    size: number
     align: number
     offset: number
 } & OutputFields
@@ -83,7 +85,7 @@ type ParsedNodeInfo<OutputFields> = {
 // recursive parsed node
 
 type ParsedNode<Node extends LayoutNode<F>, OutputFields, F = {}> =
-    Node extends ScalarNode<F, false> ? ParsedNodeInfo<OutputFields> & {
+    Node extends ScalarNode<F> ? ParsedNodeInfo<OutputFields> & {
         type: Node['type']
     } :
     Node extends StructNode<F> ? ParsedNodeInfo<OutputFields> & { 
@@ -98,9 +100,9 @@ type ParsedNode<Node extends LayoutNode<F>, OutputFields, F = {}> =
 
 export type ParsedLayout<
     InputFields, 
-    OutputFields,
-    BindingFields,
-    L extends Layout<InputFields>,
+    OutputFields = {},
+    BindingFields = {},
+    L extends Layout<InputFields> = Layout<InputFields>,
 > = {
     bindings: Array<BindingInfo<OutputFields, BindingFields>>
     attributes: {
@@ -111,15 +113,14 @@ export type ParsedLayout<
 
 // convert node into parsed tree
 
+type LayoutType = 'vertex' | 'std140'
+
 type LayoutCtx<InputFields, OutputFields, BindingFields> = {
-    buffer?: Binding,
-    bindingInfo: Map<Binding, BindingInfo<OutputFields, BindingFields>>,
+    type: LayoutType
+    buffer?: Binding
+    bindingInfo: Map<Binding, BindingInfo<OutputFields, BindingFields>>
     meta: (node: ScalarNode<InputFields>, path: string, bindingInfo: BindingInfo<OutputFields, BindingFields>) => OutputFields
 }
-
-// type LayoutOptions = {
-//     layoutType: 'vertex' | 'std140'
-// }
 
 function computeLayout<
     InputFields,
@@ -145,17 +146,22 @@ function computeLayout<
 
     if (node.type in GLSL_TYPES) {
         const { row, col } = TYPE_SIZE[node.type as VertexAttributeType]
+        let size = row * col * binding.buffer.bytes
+        const align = ctx.type === 'std140' 
+            ? STD140_ALIGN[node.type as keyof typeof STD140_ALIGN]
+            : size
         const attr: ParsedAttributeInfo<OutputFields> = {
             type: GLSL_TYPES[node.type as keyof typeof GLSL_TYPES],
             path, 
             offset: binding.stride,
             row, 
             col, 
-            align: STD140_ALIGN[node.type as keyof typeof STD140_ALIGN],
+            size,
+            align,
             ...meta(node as ScalarNode<InputFields>, path, binding)
         }
         binding.layout.push(attr)
-        binding.stride += row * col * binding.buffer.bytes
+        binding.stride += Math.max(size, alignTo(size, align))
         const scalar = { [info]: attr }
         return scalar as ParsedNode<typeof node, OutputFields>
 
@@ -175,21 +181,26 @@ function computeLayout<
 
 
 export function parseLayout<
-    InputFields, OutputFields, BindingFields,
-    const L extends Layout<InputFields> = Layout<InputFields>
+    InputFields, 
+    OutputFields = {}, 
+    BindingFields = {},
+    const L extends Layout<InputFields> = Layout<InputFields>,
+    B extends Binding = Binding
 >(
     layout: L,
-    defaultBuffer: Binding | undefined,
+    defaultBuffer: B | undefined,
     meta: (
         node: ScalarNode<InputFields>, 
         path: string, 
         buffer: BindingInfo<OutputFields, BindingFields>
     ) => OutputFields,
+    type: LayoutType = 'vertex'
 ) {
     const ctx: LayoutCtx<InputFields, OutputFields, BindingFields> = {
-       buffer: defaultBuffer,
-       bindingInfo: new Map(),
-       meta,
+        type,
+        buffer: defaultBuffer,
+        bindingInfo: new Map(),
+        meta,
     }
     const attributes: any = {}
     for (const key in layout) attributes[key] = computeLayout<InputFields, OutputFields, BindingFields>(layout[key], key, ctx, true)
@@ -247,8 +258,6 @@ export function objectFromRecord<N, M>(
 
 
 // proxy version that returns the proper value types per float/vec3/etc
-// this only does compile-time type validation, and bad values can still be passed to the proxy at runtime
-// (this is a task for the implementation to resolve if required)
 
 type ParsedProxyNode<Node extends LayoutNode<InputFields>, InputFields> =
     Node extends ScalarNode<InputFields> 
@@ -263,22 +272,19 @@ type ParsedProxyNode<Node extends LayoutNode<InputFields>, InputFields> =
         > 
         : never
 
-type ParsedProxyLayout<L extends Layout<InputFields>, InputFields = {}> = {
+export type ParsedProxyLayout<L extends Layout<InputFields>, InputFields = {}> = Expand<DeepMutable<{
     [K in keyof L]: ParsedProxyNode<L[K], InputFields>
-}
+}>>
 
-export function proxyFromLayout<InputFields, OutputFields = {}, const L extends {} = Layout<InputFields>>(
-    layout: L,
-    defaultBuffer: Binding, 
-    options: {
-        meta: (node: ScalarNode<InputFields>, path: string) => OutputFields,
-        get: (meta: ParsedAttributeInfo<OutputFields>) => any,
-        set: (meta: ParsedAttributeInfo<OutputFields>, value: any) => boolean
-    },
-) {
-    const { meta, get, set } = options
-    const { attributes } = parseLayout<InputFields, OutputFields, {}>(layout, defaultBuffer, meta || (() => {}))
-    return proxyGraph(attributes, get, set) as Expand<DeepMutable<ParsedProxyLayout<L>>>
+export function proxyFromLayout<
+    InputFields,
+    OutputFields,
+    const L extends Layout<InputFields>,
+    const P extends ParsedLayout<InputFields, OutputFields, {}, L>,
+    const G extends (meta: ParsedAttributeInfo<OutputFields>) => any,
+    const S extends (meta: ParsedAttributeInfo<OutputFields>, value: any) => boolean
+>(parsedLayout: P, opts: { get: G, set: S }) {
+    return proxyGraph(parsedLayout.attributes, opts.get, opts.set) as ParsedProxyLayout<L>
 }
 
 export function proxyFromFlat<M extends Meta, R>(
@@ -328,7 +334,10 @@ function proxyGraph<N, V>(
         },
         set(t, prop: string, value: any) {
             const node = t[prop]
-            if (!node) return false
+            if (!node) {
+                console.warn(`"${prop}" does not exist`)
+                return true
+            }
             const attr = node[info]
             // leaf node
             if (attr !== undefined) return set(attr, value)
@@ -338,7 +347,8 @@ function proxyGraph<N, V>(
                 for (const k in value) child[k] = value[k]
                 return true
             }
-            return false
+            console.warn(`"${prop}" does not exist`)
+            return true
         }
     })
 }

@@ -1,4 +1,3 @@
-import { GLSL_TYPES } from './attributes.ts'
 import { parseLayout } from './layout.ts'
 import { glBufferFormat } from './util.ts'
 import type { Layout, VertexLayout, VertexLayoutArray, ParsedLayout } from './layout.ts'
@@ -15,6 +14,8 @@ type VertexSchema = {
     // two names for divisor, remove this later
     divisor?: number
     step?: number
+    // remove types from layout internal
+    value?: never
 }
 
 type VertexSchemaWithLocation = VertexSchema & { 
@@ -70,12 +71,13 @@ type ParsedVertexLayout = {
  */
 
 export class VertexBuffer {
-    buffer: WebGLBuffer
-    bytes: number
-    count: number
+    readonly buffer: WebGLBuffer
+    readonly bytes: number
+    readonly count: number
+    readonly glFormat: GLBufferType
+    readonly gl: WebGL2RenderingContext
+
     layout?: ParsedVertexLayout
-    glFormat: GLBufferType
-    gl: WebGL2RenderingContext
 
     constructor(gl: WebGL2RenderingContext, vertices: TypedArray | Array<number>) {
         const buffer = gl.createBuffer()
@@ -127,11 +129,11 @@ export class VertexBuffer {
  * ```
  */
 export class VertexIndex {
-    buffer: WebGLBuffer
-    count: number
-    bytes: number
-    glFormat: GLBufferType
-    gl: WebGL2RenderingContext
+    readonly buffer: WebGLBuffer
+    readonly count: number
+    readonly bytes: number
+    readonly glFormat: GLBufferType
+    readonly gl: WebGL2RenderingContext
 
     constructor(gl: WebGL2RenderingContext, indices: UintTypedArray | Array<number>) {
         this.buffer = gl.createBuffer()
@@ -292,10 +294,10 @@ function isIntOrUintGlEnum(glEnum: number) {
  */
 
 export class VAO {
-    vao: WebGLVertexArrayObject
-    vertexCount: number
-    instanceCount: number
-    gl: WebGL2RenderingContext
+    readonly vao: WebGLVertexArrayObject
+    readonly vertexCount: number
+    readonly instanceCount: number
+    readonly gl: WebGL2RenderingContext
 
     constructor(gl: WebGL2RenderingContext, shader: Shader, config: VertexLayoutArgs)
     constructor(gl: WebGL2RenderingContext, config: VertexLayoutArgs)

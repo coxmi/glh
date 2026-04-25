@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test'
 import assert from 'node:assert'
-import { proxyFromLayout, proxyFromFlat, isProxy } from './../src/layout.ts'
+import { parseLayout, proxyFromLayout, proxyFromFlat, isProxy } from './../src/layout.ts'
 import type { ArrayOfLength } from '../src/types.ts'
 
 
@@ -44,8 +44,8 @@ describe('Layout proxy graph', () => {
         glFormat: 0
     }
     const proxyValues: Record<string, any> = {}
-    const proxy = proxyFromLayout(layout, defaultBuffer, {
-        meta: (_node, path) => ({ path }),
+    const parsed = parseLayout(layout, defaultBuffer, (_node, path) => ({ path }))
+    const proxy = proxyFromLayout(parsed, {
         get: meta => proxyValues[meta.path],
         set: (meta, value) => (proxyValues[meta.path] = value, true)
     });

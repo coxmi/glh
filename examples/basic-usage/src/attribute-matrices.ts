@@ -23,7 +23,7 @@ const vertexSrc = `
     out vec3 aTransformed;
 
     void main() {
-        vec3 aTransform = aPosition * aMatrix;
+        vec3 aTransform = aMatrix * aPosition;
         gl_Position = vec4(aTransform, 1.0);
         vColor = aColor;
     }

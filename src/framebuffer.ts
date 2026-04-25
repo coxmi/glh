@@ -1,9 +1,9 @@
 import { Texture } from './texture.ts'
 
 export class FrameBuffer {
-    buffer: WebGLFramebuffer
-    texture: Texture
-    gl: WebGL2RenderingContext
+    readonly buffer: WebGLFramebuffer
+    readonly texture: Texture
+    readonly gl: WebGL2RenderingContext
 
     constructor(gl: WebGL2RenderingContext, texture?: Texture, attachLocation = 0) {
         const fbo = gl.createFramebuffer()

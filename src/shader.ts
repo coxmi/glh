@@ -1,7 +1,9 @@
 import { createUniforms } from './uniforms.ts'
 import { prettyConsole } from './debug.ts'
+import type { UBO } from './ubo.ts'
 import type { Uniforms, UniformArgs } from './uniforms.ts'
 import type { Expand } from './types.ts'
+
 
 /**
  * ```ts
@@ -21,19 +23,42 @@ import type { Expand } from './types.ts'
  * ```
  */
 
-export class Shader<U extends UniformArgs = {}> {
-    program: WebGLProgram
-    uniforms: Expand<Uniforms<U>>
-    gl: WebGL2RenderingContext
-    constructor(
-        gl: WebGL2RenderingContext, 
-        vertexShader: string, 
-        fragmentShader: string, 
-        uniformValues?: Uniforms<U>
-    ) {
-        this.program = createProgram(gl, vertexShader, fragmentShader)
+type ShaderConfig<U extends UniformArgs> = {
+    vertex: string
+    fragment: string
+    ubo?: UBO | UBO[]
+    uniforms?: Uniforms<U>
+}
+
+type ShaderConstructor<U extends UniformArgs> =
+    | [gl: WebGL2RenderingContext, config: ShaderConfig<U>]
+    | [gl: WebGL2RenderingContext, vertex: string, fragment: string, uniforms?: Uniforms<U>]
+
+
+export class Shader<U extends UniformArgs = UniformArgs> {
+    readonly program: WebGLProgram
+    readonly uniforms: Expand<Uniforms<U>>
+    readonly gl: WebGL2RenderingContext
+
+    constructor(...args: ShaderConstructor<U>) {
+        const gl = args[0]
+        const config: ShaderConfig<U> = args.length === 2 
+            ? args[1] 
+            : { vertex: args[1], fragment: args[2], uniforms: args[3] }
+
+        this.program = createProgram(gl, config.vertex, config.fragment)
         gl.useProgram(this.program)
-        this.uniforms = createUniforms<U>(gl, this.program, uniformValues) 
+        this.uniforms = createUniforms<U>(gl, this.program, config.uniforms) 
+
+        if (config.ubo) {
+            const ubos = Array.isArray(config.ubo) ? config.ubo : [config.ubo]
+            for (const ubo of ubos) {
+                const index = gl.getUniformBlockIndex(this.program, ubo.name)
+                if (index < 0) console.warn(`Couldn't find uniform block index for ${ubo.name}`)
+                gl.uniformBlockBinding(this.program, index, ubo.loc)
+            }
+        }
+
         gl.useProgram(null)
         this.gl = gl
     }

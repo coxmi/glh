@@ -50,7 +50,7 @@ function uniformMatrices() {
           s, c, 0,
           0, 0, 1,
         ];
-    }    
+    }
 
     type Uniforms = { uTransform: 'mat3' }
     const shader = new Shader<Uniforms>(gl, vertexSrc, fragmentSrc, {
